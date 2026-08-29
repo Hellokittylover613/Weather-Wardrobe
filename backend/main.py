@@ -1,11 +1,10 @@
 import os
 import uuid
 import json
+import requests
 
-import requests
-import requests
 from dotenv import load_dotenv
-from google import genai 
+from google import genai
 
 from fastapi import (
     FastAPI,
@@ -14,6 +13,7 @@ from fastapi import (
     UploadFile,
     File,
 )
+
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -40,6 +40,7 @@ load_dotenv()
 
 REMOVE_BG_API_KEY = os.getenv("REMOVE_BG_API_KEY")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
 gemini_client = None
 
 if GEMINI_API_KEY:
@@ -71,7 +72,9 @@ app.add_middleware(
 # UPLOADS FOLDER
 # ============================================================
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(
+    os.path.abspath(__file__)
+)
 
 UPLOAD_DIR = os.path.join(
     BASE_DIR,
@@ -82,7 +85,6 @@ os.makedirs(
     UPLOAD_DIR,
     exist_ok=True,
 )
-
 
 app.mount(
     "/uploads",
@@ -153,7 +155,9 @@ def create_user(
 
     existing_user = (
         db.query(models.User)
-        .filter(models.User.email == user.email)
+        .filter(
+            models.User.email == user.email
+        )
         .first()
     )
 
@@ -172,7 +176,7 @@ def create_user(
         )
 
     hashed_password = pwd_context.hash(
-        user.password,
+        user.password
     )
 
     new_user = models.User(
@@ -206,7 +210,9 @@ def login(
 
     existing_user = (
         db.query(models.User)
-        .filter(models.User.email == user.email)
+        .filter(
+            models.User.email == user.email
+        )
         .first()
     )
 
@@ -253,7 +259,8 @@ def sync_firebase_user(
     existing_user = (
         db.query(models.User)
         .filter(
-            models.User.firebase_uid == user.firebase_uid
+            models.User.firebase_uid
+            == user.firebase_uid
         )
         .first()
     )
@@ -275,13 +282,17 @@ def sync_firebase_user(
 
     existing_email = (
         db.query(models.User)
-        .filter(models.User.email == user.email)
+        .filter(
+            models.User.email == user.email
+        )
         .first()
     )
 
     if existing_email:
 
-        existing_email.firebase_uid = user.firebase_uid
+        existing_email.firebase_uid = (
+            user.firebase_uid
+        )
 
         db.commit()
         db.refresh(existing_email)
@@ -406,7 +417,7 @@ async def upload_image(
             file.write(image_data)
 
         # ----------------------------------------------------
-        # Verify file was actually created
+        # Verify file
         # ----------------------------------------------------
 
         if not os.path.exists(file_path):
@@ -426,10 +437,6 @@ async def upload_image(
                 status_code=500,
                 detail="Uploaded image file is empty.",
             )
-
-        # ----------------------------------------------------
-        # Return URL
-        # ----------------------------------------------------
 
         return {
             "status": "success",
@@ -471,13 +478,12 @@ async def remove_background(
             raise HTTPException(
                 status_code=500,
                 detail=(
-                    "REMOVE_BG_API_KEY is missing from .env. "
-                    "Background removal cannot be used."
+                    "REMOVE_BG_API_KEY is missing from environment variables."
                 ),
             )
 
         # ----------------------------------------------------
-        # Security: only use filename, not arbitrary paths
+        # Security: only filename
         # ----------------------------------------------------
 
         safe_filename = os.path.basename(
@@ -612,7 +618,9 @@ def create_wardrobe_item(
 
     user = (
         db.query(models.User)
-        .filter(models.User.id == item.user_id)
+        .filter(
+            models.User.id == item.user_id
+        )
         .first()
     )
 
@@ -788,6 +796,8 @@ def delete_wardrobe_item(
         "status": "success",
         "message": "Wardrobe item deleted!",
     }
+
+
 # ============================================================
 # AI OUTFIT SUGGESTION - GEMINI
 # ============================================================
@@ -805,9 +815,10 @@ def get_outfit_suggestion(
         # ----------------------------------------------------
 
         if not GEMINI_API_KEY:
+
             raise HTTPException(
                 status_code=500,
-                detail="GEMINI_API_KEY is missing from .env.",
+                detail="GEMINI_API_KEY is missing from environment variables.",
             )
 
         # ----------------------------------------------------
@@ -817,12 +828,23 @@ def get_outfit_suggestion(
         user_id = payload.get("user_id")
         temperature = payload.get("temperature")
         condition = payload.get("condition")
-        occasion = payload.get("occasion", "Any")
+        occasion = payload.get(
+            "occasion",
+            "Any",
+        )
 
-        if user_id is None or temperature is None or condition is None:
+        if (
+            user_id is None
+            or temperature is None
+            or condition is None
+        ):
+
             raise HTTPException(
                 status_code=400,
-                detail="user_id, temperature, and condition are required.",
+                detail=(
+                    "user_id, temperature, and condition "
+                    "are required."
+                ),
             )
 
         # ----------------------------------------------------
@@ -831,22 +853,26 @@ def get_outfit_suggestion(
 
         items = (
             db.query(models.WardrobeItem)
-            .filter(models.WardrobeItem.user_id == user_id)
+            .filter(
+                models.WardrobeItem.user_id
+                == user_id
+            )
             .all()
         )
 
         if not items:
+
             return {
                 "status": "success",
                 "suggestion": (
-                    "Your wardrobe is empty. Add some clothing items "
-                    "first and I'll help you choose an outfit!"
+                    "Your wardrobe is empty. Add some clothing "
+                    "items first and I'll help you choose an outfit!"
                 ),
                 "recommended_item_ids": [],
             }
 
         # ----------------------------------------------------
-        # Prepare wardrobe information for Gemini
+        # Prepare wardrobe information
         # ----------------------------------------------------
 
         wardrobe_summary = [
@@ -865,10 +891,11 @@ def get_outfit_suggestion(
         # ----------------------------------------------------
 
         prompt = (
-            "You are the AI fashion assistant inside a Weather Wardrobe app.\n\n"
+            "You are the AI fashion assistant inside a "
+            "Weather Wardrobe app.\n\n"
 
-            "Your job is to recommend ONE outfit using ONLY items "
-            "that actually exist in the user's wardrobe.\n\n"
+            "Your job is to recommend ONE outfit using ONLY "
+            "items that actually exist in the user's wardrobe.\n\n"
 
             f"Current temperature: {temperature}°C\n"
             f"Current weather: {condition}\n"
@@ -877,8 +904,12 @@ def get_outfit_suggestion(
             "User's wardrobe:\n"
             f"{json.dumps(wardrobe_summary, indent=2)}\n\n"
 
-            "Choose a practical outfit that matches the weather and occasion. "
-            "Prefer a combination of a top, bottom, and shoes when available. "
+            "Choose a practical outfit that matches the "
+            "weather and occasion. "
+
+            "Prefer a combination of a top, bottom, and shoes "
+            "when available. "
+
             "Add outerwear or accessories only when appropriate.\n\n"
 
             "IMPORTANT:\n"
@@ -888,6 +919,7 @@ def get_outfit_suggestion(
             "- Keep the explanation friendly and concise.\n\n"
 
             "Return ONLY valid JSON in exactly this format:\n"
+
             "{\n"
             '  "suggestion": "A short friendly explanation",\n'
             '  "recommended_item_ids": [1, 2, 3]\n'
@@ -933,9 +965,13 @@ def get_outfit_suggestion(
         # ----------------------------------------------------
 
         if response.status_code != 200:
+
             raise HTTPException(
                 status_code=500,
-                detail=f"Gemini request failed: {response.text}",
+                detail=(
+                    "Gemini request failed: "
+                    f"{response.text}"
+                ),
             )
 
         result = response.json()
@@ -945,14 +981,24 @@ def get_outfit_suggestion(
         # ----------------------------------------------------
 
         try:
+
             ai_text = (
                 result["candidates"][0]
                 ["content"]["parts"][0]["text"]
             )
-        except (KeyError, IndexError, TypeError):
+
+        except (
+            KeyError,
+            IndexError,
+            TypeError,
+        ):
+
             raise HTTPException(
                 status_code=500,
-                detail=f"Unexpected Gemini response: {response.text}",
+                detail=(
+                    "Unexpected Gemini response: "
+                    f"{response.text}"
+                ),
             )
 
         # ----------------------------------------------------
@@ -1004,11 +1050,14 @@ def get_outfit_suggestion(
         }
 
     except HTTPException:
+
         raise
 
     except Exception as e:
 
         raise HTTPException(
             status_code=500,
-            detail=f"Outfit suggestion failed: {str(e)}",
+            detail=(
+                f"Outfit suggestion failed: {str(e)}"
+            ),
         )
