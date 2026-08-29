@@ -6,4 +6,5 @@ python-dotenv
 passlib[bcrypt]
 python-multipart
 requests
-google-genaiemail-validator
+google-genai
+email-validator
