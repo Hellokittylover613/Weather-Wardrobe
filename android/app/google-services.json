@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "873729559970",
+    "project_id": "weather-wardrobe-70636",
+    "storage_bucket": "weather-wardrobe-70636.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:873729559970:android:a3ccc0016a08b2f9ee76fb",
+        "android_client_info": {
+          "package_name": "com.example.weather_wardrobe"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCgZZEsAWc7e9zyZUbdmjq5IeRJqWW-IOY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
