@@ -14,3 +14,21 @@ key.properties
 **/*.jks
 /backend/uploads/
 __pycache__/
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Backend generated uploads
+backend/uploads/
+
+# Python
+__pycache__/
+*.pyc
+
+# Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
